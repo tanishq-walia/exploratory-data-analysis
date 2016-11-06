@@ -1,0 +1,94 @@
+---
+title: "Course Project 2"
+author: "Tanishq"
+date: "6 November 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+
+
+```{r}
+require(ggplot2)
+NEI<-readRDS("/media/hduser/New Volume1/course /course1/exploratory-data-analysis/summarySCC_PM25.rds")
+
+Source_classification<-readRDS("/media/hduser/New Volume1/course /course1/exploratory-data-analysis/Source_Classification_Code.rds")
+#for question 1
+#First we'll aggregate the total PM2.5 emission from 
+#all sources for each of the years 1999, 2002, 2005, and 2008.
+Total_agg <- aggregate(Emissions ~ year,NEI, sum)
+barplot( (Total_agg$Emissions)/10^6,names.arg = Total_agg$year,
+             xlab = "YEAR",ylab = "PM2.5 Emission (10^6)",
+                main="Emission From All US Sources")
+#for Question 2 
+#Have total emissions from PM2.5 decreased in the Baltimore 
+#City, Maryland (fips == "24510") from 1999 to 2008?
+baltimoreNEI <- NEI[NEI$fips=="24510",]
+Total_agg_Baltimore <- aggregate(Emissions ~ year, baltimoreNEI,sum)
+barplot(Total_agg_Baltimore$Emissions,names.arg = Total_agg_Baltimore$year,
+        xlab="YEAR",ylab="PM2.5 Emissions (Tons)",
+        main="ALL Emission From Baltimore City Sources")
+#for question 3
+#Overall total emissions from PM2.5 have decreased in Baltimore City,
+#Maryland from 1999 to 2008.
+ggpq3<-ggplot(baltimoreNEI,aes(factor(year),Emissions,fill=type))+
+        geom_bar(stat="identity")+theme_bw()+guides(fill=FALSE)+
+        facet_grid(.~type,scales = "free",space = "free")+
+        labs(x="YEAR",y=expression("TOTAL PM2.5 IN TONS"))+
+        labs(title=expression(("PM[2.5]"*"Emissions,baltimore city 99-08 by all source")))
+
+print(ggpq3)
+#for question 4
+#Which have seen increases in emissions from 1999–2008?
+#subset the required data
+coal_realted<-grepl("coal",Source_classification$SCC.Level.Four,ignore.case = TRUE)
+combustion_realted<-grepl("comb",Source_classification$SCC.Level.One,ignore.case = TRUE)
+
+coal_combustion<-(combustion_realted & coal_realted)
+combustion_Source_classification <- Source_classification[coal_combustion,]$SCC
+combustionNEI <- NEI[NEI$SCC%in% combustion_Source_classification ,]
+ggpq4 <- ggplot(combustionNEI,aes(factor(year),Emissions/10^5)) +
+geom_bar(stat="identity",fill="grey",width=0.75) +
+theme_bw() +  guides(fill=FALSE) +
+labs(x="year", y=expression("Total PM"[2.5]*" Emission (10^5 Tons)")) +
+labs(title=expression("PM"[2.5]*" Coal Combustion Source Emissions Across US from 1999-2008"))
+print(ggpq4)
+# for question 5
+#First we subset the motor vehicles, 
+#which we assume is anything like Motor Vehicle in SCC.Level.Two.
+
+vehicles <- grepl("vehicle",Source_classification$SCC.Level.Two,ignore.case = TRUE)
+vehiclesSCC <- Source_classification[vehicles,]$SCC
+vehiclesNEI <- NEI[NEI$SCC %in% vehiclesSCC,]
+#we subset for motor vehicles in Baltimore
+baltimoreVehiclesNEI <- vehiclesNEI[vehiclesNEI$fips==24510,]
+ggpq5<- ggplot(baltimoreVehiclesNEI,aes(factor(year),Emissions)) +
+geom_bar(stat="identity",fill="grey",width=0.75) +
+theme_bw() +  guides(fill=FALSE) +
+labs(x="year", y=expression("Total PM"[2.5]*" Emission (10^5 Tons)")) +
+labs(title=expression("PM"[2.5]*" Motor Vehicle Source Emissions in Baltimore from 1999-2008"))
+print(ggpq5)
+#for question 6
+#Emissions from motor vehicle sources have dropped from 1999-2008 in Baltimore City!
+vehiclesBaltimoreNEI <- vehiclesNEI[vehiclesNEI$fips == 24510,]
+vehiclesBaltimoreNEI$city <- "Baltimore City"
+vehiclesLANEI <- vehiclesNEI[vehiclesNEI$fips=="06037",]
+vehiclesLANEI$city <- "Los Angeles County"
+bothNEI <- rbind(vehiclesBaltimoreNEI,vehiclesLANEI)
+
+ggpq6 <- ggplot(bothNEI, aes(x=factor(year), y=Emissions, fill=city)) +
+        geom_bar(aes(fill=year),stat="identity") +
+        facet_grid(scales="free", space="free", .~city) +
+        guides(fill=FALSE) + theme_bw() +
+        labs(x="year", y=expression("Total PM"[2.5]*" Emission (Kilo-Tons)")) + 
+        labs(title=expression("PM"[2.5]*" Motor Vehicle Source Emissions in Baltimore & LA, 1999-2008"))
+
+print(ggpq6)
+```
+
+
