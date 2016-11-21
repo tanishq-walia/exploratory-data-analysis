@@ -1,0 +1,13 @@
+pm0<-read.table("/home/hduser/Desktop/RD_501_88101_1999-0.txt",header=FALSE,comment.char="#",sep="|",na.strings="")
+cnames<-readLines("/home/hduser/Desktop/RD_501_88101_1999-0.txt",1)
+cnames<-strsplit(cnames,"|",fixed = TRUE)
+names(pm0)<-tolower(make.names(cnames[[1]]))
+pm1<-read.table("/home/hduser/Desktop/RD_501_88101_2012-0.txt",sep = "|",na.strings = "",header = FALSE,comment.char = "#")
+names(pm1)<-tolower(make.names(cnames[[1]]))
+pm<-rbind(pm0,pm1)
+pm<-mutate(pm,year=factor(rep(c(1999,2012),c(nrow(pm0),c(nrow(pm1))))))%>%rename(pm=sample.value)
+library(ggplot2)
+set.seed(2015)
+idx<-sample(nrow(pm),1000)
+qplot(year,log(pm),data=pm[idx,],geom = "boxplot")
+
